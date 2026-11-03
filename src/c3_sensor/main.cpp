@@ -85,6 +85,9 @@ void loop() {
                              ((z.healthy ? 1 : 0) << 2) |
                              ((a.healthy ? 1 : 0) << 3);
 
+        // Update health for each individual corner (Axis X, Y, Z, A)
+        rgb.setSensorHealth(x.healthy, y.healthy, z.healthy, a.healthy);
+
         // Update RGB LED Status based on AS5600 sensor health:
         // statusByte == 0x0F (15) means all 4 magnets detected properly
         if (statusByte == 0x0F) {

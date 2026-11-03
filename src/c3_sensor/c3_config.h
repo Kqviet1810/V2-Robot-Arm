@@ -17,6 +17,7 @@
 
 // RGB LED (WS2812) Pin (Pin 11: GPIO 2 theo sơ đồ)
 #define RGB_LED_PIN         2
+#define NUM_LEDS            4   // 4 đèn LED ở 4 góc bo mạch
 
 // TCA9548A I2C Multiplexer Address
 #define TCA9548A_ADDR       0x70

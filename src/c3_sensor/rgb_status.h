@@ -1,14 +1,14 @@
 #pragma once
 #include <Arduino.h>
-#include <esp32-hal-rgb-led.h>
+#include <Adafruit_NeoPixel.h>
 #include "c3_config.h"
 
 enum class C3Status {
-    BOOTING,        // Khởi động (Màu vàng / Cyan)
-    TCA_ERROR,      // Lỗi I2C Mux TCA9548A (Nhấp nháy Đỏ nhanh)
-    SENSOR_WARN,    // Lỗi nam châm AS5600 ở 1 hoặc nhiều trục (Màu Cam / Magenta nháy)
-    CALIBRATING,    // Đang cân chỉnh Zero (Trắng nháy nhanh)
-    NORMAL_OK       // Hoạt động tốt 100% (Xanh lá cây nhịp tim / breathing)
+    BOOTING,        // Khởi động (Hiệu ứng đèn xoay 4 góc màu Amber)
+    TCA_ERROR,      // Lỗi I2C Mux (4 góc chớp Đỏ cảnh báo)
+    SENSOR_WARN,    // Lỗi nam châm từng trục cụ thể (Góc lỗi chớp Đỏ/Cam, góc tốt xanh)
+    CALIBRATING,    // Hiệu chuẩn Zero (Quét tia sáng Trắng quanh 4 góc)
+    NORMAL_OK       // 4 góc hoàn hảo (Hiệu ứng Neon Cyber Runner / Xoay vòng mượt)
 };
 
 class RgbStatus {
@@ -16,16 +16,25 @@ public:
     RgbStatus();
     void begin();
     void setState(C3Status newState);
+    void setSensorHealth(bool xOk, bool yOk, bool zOk, bool aOk);
     void update();
     void triggerCalibBlink();
 
-    void setColor(uint8_t r, uint8_t g, uint8_t b);
+    void setAllColor(uint8_t r, uint8_t g, uint8_t b);
+    void setCornerColor(uint8_t index, uint8_t r, uint8_t g, uint8_t b);
 
 private:
+    Adafruit_NeoPixel strip;
     C3Status currentState;
+    bool axisHealthy[4];
     unsigned long lastUpdate;
     unsigned long calibStartTime;
     bool isCalibrating;
-    uint8_t step;
-};
+    uint16_t animStep;
 
+    void renderBootAnimation();
+    void renderNormalAnimation();
+    void renderSensorWarnAnimation();
+    void renderTcaErrorAnimation();
+    void renderCalibAnimation();
+};
