@@ -3,13 +3,17 @@
 
 // ==========================================
 // ESP32-C3 SUPER MINI HARDWARE CONFIGURATION
+// (Khớp chuẩn 100% theo sơ đồ nguyên lý U6 ESP32C3-SUPERMINI)
 // ==========================================
 
 // I2C Pins for TCA9548A & AS5600
-// Note: ESP32-C3 Super Mini standard I2C is SDA=8, SCL=9 (or SDA=4, SCL=5 depending on PCB)
-#define I2C_SDA_PIN         8
-#define I2C_SCL_PIN         9
+// Theo schematic: Pin 9 (GPIO 0) -> SCL | Pin 10 (GPIO 1) -> SDA
+#define I2C_SDA_PIN         1   // GPIO 1 -> SDA
+#define I2C_SCL_PIN         0   // GPIO 0 -> SCL
 #define I2C_FREQ_HZ         400000  // Fast mode 400kHz
+
+// Buzzer pin (Pin 4: GPIO 8)
+#define BUZZER_PIN          8
 
 // TCA9548A I2C Multiplexer Address
 #define TCA9548A_ADDR       0x70
@@ -22,12 +26,12 @@
 #define NUM_AXES            4
 
 // UART Communication with Main MCU (ESP32 Dev Module)
-// Main MCU: UART2 (TX=17, RX=16)
-// ESP32-C3: RX=20, TX=21 (Default USB/JTAG can also use Serial for debug)
-#define UART_TO_MAIN_RX     20
-#define UART_TO_MAIN_TX     21
+// Sơ đồ mạch:
+// - Main MCU TX2 (GPIO 17 - net TX_C3) nối sang Pin 8 (GPIO 21) của C3 -> C3 RX = 21
+// - Main MCU RX2 (GPIO 16 - net RX_C3) nối sang Pin 7 (GPIO 20) của C3 -> C3 TX = 20
+#define UART_TO_MAIN_RX     21  // GPIO 21 nhận từ Main MCU TX2 (GPIO 17)
+#define UART_TO_MAIN_TX     20  // GPIO 20 gửi sang Main MCU RX2 (GPIO 16)
 #define UART_BAUDRATE       115200
 
 // Sampling & Telemetry interval (ms)
 #define REPORT_INTERVAL_MS  20  // 50Hz update rate
-

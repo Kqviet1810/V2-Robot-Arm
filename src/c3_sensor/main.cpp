@@ -30,14 +30,23 @@ void setup() {
     delay(1000);
     Serial.println("\n[ESP32-C3] Robot Arm V2 - AS5600 Multiplexer Starting...");
 
+    // Setup Buzzer pin
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW);
+
     // Communication UART to Main ESP32
     MainMcuSerial.begin(UART_BAUDRATE, SERIAL_8N1, UART_TO_MAIN_RX, UART_TO_MAIN_TX);
 
     // Init I2C & AS5600
     if (sensorManager.begin()) {
         Serial.println("[ESP32-C3] TCA9548A detected successfully!");
+        // Beep 2 short beeps for success
+        digitalWrite(BUZZER_PIN, HIGH); delay(60); digitalWrite(BUZZER_PIN, LOW); delay(60);
+        digitalWrite(BUZZER_PIN, HIGH); delay(60); digitalWrite(BUZZER_PIN, LOW);
     } else {
         Serial.println("[ESP32-C3] [ERROR] TCA9548A not responding at 0x70! Check wiring.");
+        // Beep 1 long beep for warning
+        digitalWrite(BUZZER_PIN, HIGH); delay(400); digitalWrite(BUZZER_PIN, LOW);
     }
 }
 
