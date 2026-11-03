@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦾 V2 Smart Robot Arm Controller</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <header class="navbar">
+        <div class="brand">
+            <span class="brand-icon">🦾</span>
+            <div class="brand-title">V2 ROBOT ARM DASHBOARD</div>
+        </div>
+        <div class="nav-controls">
+            <div class="ip-input-group">
+                <input type="text" id="esp-ip" placeholder="192.168.4.1" value="192.168.4.1">
+                <button onclick="connectWebSocket()">Connect</button>
+            </div>
+            <div id="ws-status" class="badge status-offline">
+                <span class="badge-dot"></span> Disconnected
+            </div>
+            <div id="c3-status" class="badge status-offline">
+                <span class="badge-dot"></span> C3: Offline
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="container">
+        <!-- LEFT COLUMN: Kinematics & Joint Controls -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Kinematics & Visualizer</span>
+                <span style="font-size:12px; color:var(--text-muted)">Realtime Feedback</span>
+            </div>
+
+            <!-- Canvas View -->
+            <div class="visualizer-container">
+                <div class="vis-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background:#00d2ff"></span>
+                        <span>Lệnh (Target)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background:#00e676"></span>
+                        <span>AS5600 Thực tế</span>
+                    </div>
+                </div>
+                <canvas id="armCanvas"></canvas>
+            </div>
+
+            <!-- Joint Controls -->
+            <div class="panel-header" style="margin-top: 10px;">
+                <span class="panel-title">Điều khiển 4 Trục Bước (TMC2209)</span>
+            </div>
+
+            <div class="joints-grid">
+                <!-- AXIS X -->
+                <div class="joint-card">
+                    <div class="joint-header">
+                        <span class="joint-name">TRỤC X (Base)</span>
+                        <span style="font-size: 11px; color: var(--text-muted)">Addr 0</span>
+                    </div>
+                    <div class="joint-readouts">
+                        <span>Cmd: <b id="cmd-val-0" class="ro-cmd">0.0</b></span>
+                        <span>Thực tế: <b id="actual-val-0" class="ro-actual">0.0°</b></span>
+                    </div>
+                    <input type="range" id="slider-0" class="joint-slider" min="-90" max="90" value="0" step="0.5" oninput="onSliderChange(0, this.value)">
+                    <div class="jog-button-group">
+                        <button class="btn-jog" onclick="jog(0, -5)">-5°</button>
+                        <button class="btn-jog" onclick="jog(0, -1)">-1°</button>
+                        <button class="btn-jog" onclick="jog(0, 1)">+1°</button>
+                        <button class="btn-jog" onclick="jog(0, 5)">+5°</button>
+                    </div>
+                </div>
+
+                <!-- AXIS Y -->
+                <div class="joint-card">
+                    <div class="joint-header">
+                        <span class="joint-name">TRỤC Y (Vai - Shoulder)</span>
+                        <span style="font-size: 11px; color: var(--text-muted)">Addr 1</span>
+                    </div>
+                    <div class="joint-readouts">
+                        <span>Cmd: <b id="cmd-val-1" class="ro-cmd">0.0</b></span>
+                        <span>Thực tế: <b id="actual-val-1" class="ro-actual">0.0°</b></span>
+                    </div>
+                    <input type="range" id="slider-1" class="joint-slider" min="-45" max="90" value="0" step="0.5" oninput="onSliderChange(1, this.value)">
+                    <div class="jog-button-group">
+                        <button class="btn-jog" onclick="jog(1, -5)">-5°</button>
+                        <button class="btn-jog" onclick="jog(1, -1)">-1°</button>
+                        <button class="btn-jog" onclick="jog(1, 1)">+1°</button>
+                        <button class="btn-jog" onclick="jog(1, 5)">+5°</button>
+                    </div>
+                </div>
+
+                <!-- AXIS Z -->
+                <div class="joint-card">
+                    <div class="joint-header">
+                        <span class="joint-name">TRỤC Z (Khuỷu - Elbow)</span>
+                        <span style="font-size: 11px; color: var(--text-muted)">Addr 2</span>
+                    </div>
+                    <div class="joint-readouts">
+                        <span>Cmd: <b id="cmd-val-2" class="ro-cmd">0.0</b></span>
+                        <span>Thực tế: <b id="actual-val-2" class="ro-actual">0.0°</b></span>
+                    </div>
+                    <input type="range" id="slider-2" class="joint-slider" min="-120" max="120" value="0" step="0.5" oninput="onSliderChange(2, this.value)">
+                    <div class="jog-button-group">
+                        <button class="btn-jog" onclick="jog(2, -5)">-5°</button>
+                        <button class="btn-jog" onclick="jog(2, -1)">-1°</button>
+                        <button class="btn-jog" onclick="jog(2, 1)">+1°</button>
+                        <button class="btn-jog" onclick="jog(2, 5)">+5°</button>
+                    </div>
+                </div>
+
+                <!-- AXIS A -->
+                <div class="joint-card">
+                    <div class="joint-header">
+                        <span class="joint-name">TRỤC A (Cổ tay - Wrist)</span>
+                        <span style="font-size: 11px; color: var(--text-muted)">Addr 3</span>
+                    </div>
+                    <div class="joint-readouts">
+                        <span>Cmd: <b id="cmd-val-3" class="ro-cmd">0.0</b></span>
+                        <span>Thực tế: <b id="actual-val-3" class="ro-actual">0.0°</b></span>
+                    </div>
+                    <input type="range" id="slider-3" class="joint-slider" min="-90" max="90" value="0" step="0.5" oninput="onSliderChange(3, this.value)">
+                    <div class="jog-button-group">
+                        <button class="btn-jog" onclick="jog(3, -5)">-5°</button>
+                        <button class="btn-jog" onclick="jog(3, -1)">-1°</button>
+                        <button class="btn-jog" onclick="jog(3, 1)">+1°</button>
+                        <button class="btn-jog" onclick="jog(3, 5)">+5°</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Gripper, Teach & Play, Actions -->
+        <section class="panel">
+            <!-- SERVO GRIPPER CONTROLS -->
+            <div class="panel-header">
+                <span class="panel-title">Tay Kẹp (2x RC Servo)</span>
+            </div>
+
+            <!-- Servo B: Rotate -->
+            <div class="servo-row">
+                <div class="servo-header">
+                    <span>Trục B: Xoay Kẹp (Wrist Rotate - GPIO 32)</span>
+                    <span id="lbl-rotate-val" style="color:var(--warning)">90°</span>
+                </div>
+                <input type="range" class="servo-slider" min="0" max="180" value="90" oninput="onRotateSlider(this.value)">
+            </div>
+
+            <!-- Servo C: Gripper -->
+            <div class="servo-row">
+                <div class="servo-header">
+                    <span>Trục C: Độ Mở / Kẹp (Claw - GPIO 33)</span>
+                    <span id="lbl-gripper-val" style="color:var(--warning)">90°</span>
+                </div>
+                <input type="range" class="servo-slider" min="0" max="180" value="90" oninput="onGripperSlider(this.value)">
+            </div>
+
+            <div class="action-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 8px;">
+                <button class="btn btn-blue" onclick="quickGrip('open')">👐 Mở Kẹp Nhanh</button>
+                <button class="btn btn-green" onclick="quickGrip('close')">✊ Đóng Kẹp Nhanh</button>
+            </div>
+
+            <!-- TEACH & PLAYBACK (WAYPOINTS) -->
+            <div class="panel-header" style="margin-top: 10px;">
+                <span class="panel-title">Dạy & Lặp Lại (Teach & Play)</span>
+            </div>
+
+            <div class="waypoints-table-wrap">
+                <table class="wp-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>Z</th>
+                            <th>A</th>
+                            <th>Kẹp</th>
+                            <th>Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wp-table-body">
+                        <!-- Dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="action-grid">
+                <button class="btn btn-blue" onclick="recordWaypoint()">➕ Lưu Điểm</button>
+                <button id="btn-play-seq" class="btn btn-green" onclick="playSequence()">▶ Chạy Chu Trình</button>
+                <button class="btn btn-gray" onclick="clearWaypoints()">🗑 Xóa Hết</button>
+            </div>
+
+            <!-- SYSTEM POWER & SAFETY -->
+            <div class="panel-header" style="margin-top: 10px;">
+                <span class="panel-title">Hệ Thống & An Toàn</span>
+            </div>
+
+            <div class="action-grid" style="grid-template-columns: 1fr 1fr;">
+                <button id="btn-power" class="btn btn-blue" onclick="togglePower()">⚡ Nguồn Động Cơ: BẬT</button>
+                <button class="btn btn-gray" onclick="setZero()">🎯 Đặt Gốc Tọa Độ (Zero)</button>
+            </div>
+
+            <button class="btn-danger-big" onclick="emergencyStop()">
+                🚨 DỪNG KHẨN CẤP (E-STOP)
+            </button>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+
